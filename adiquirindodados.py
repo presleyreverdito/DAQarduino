@@ -6,6 +6,7 @@ import time
 import serial
 import xlsxwriter
 import thread
+import Queue
 """
 VARIAVEIS GLOBAIS (NESTE EXEMPLO)
 """
@@ -30,7 +31,6 @@ def monitora(b,c):
 def InfoComSerial():
  print '\nObtendo informacoes sobre a comunicacao serial\n'
  # Iniciando conexao serial
- #comport = serial.Serial(DEVICE, 9600, timeout=1)
  comport = serial.Serial(DEVICE, int(BAUD_RATE), timeout=int(TIMEOUT), bytesize=int(BYTESIZE), stopbits=int(STOPBITS), parity=PARITY)
  # Alem das opcoes rtscts=BOOL, xonxoff=BOOL, e dsrdtr=BOOL
  # Link: http://pyserial.sourceforge.net/pyserial_api.html#constants
@@ -41,17 +41,23 @@ def InfoComSerial():
  print '\nStatus Porta: %s ' % (comport.isOpen())
  global stop
  stop = 0
-
+ q=Queue.Queue()
  thread.start_new_thread( monitora , (None,None, ))
 
  while (stop != 1):
     Value = comport.read(5)
-    worksheet.write(row, col, Value)
-    row +=1
+    q.put(Value)
     print '\nRetorno da serial: %s' % (Value)
+    Value = None
+    
+ while (q.empty() == False):
+    worksheet.write(row, 0, q.get())
+    row +=1
+
+
+
 
  # Fechando conexao serial
-
  workbook.close()
  comport.close()
 
